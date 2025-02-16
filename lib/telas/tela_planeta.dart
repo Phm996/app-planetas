@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:myapp/controles/controle_planeta.dart';
 import 'package:myapp/modelos/planeta.dart';
 
+// Tela de cadastro/edição de um planeta
 class TelaPlaneta extends StatefulWidget {
-  final bool isIncluir;
-
-  final Planeta planeta;
-  final Function() onFinalizado;
+  final bool isIncluir; // Indica se a tela está sendo usada para inclusão (true) ou edição (false)
+  final Planeta planeta; // Objeto do planeta que será cadastrado ou editado
+  final Function() onFinalizado; // Função chamada quando a ação for concluída
 
   const TelaPlaneta({
     super.key,
@@ -19,30 +19,35 @@ class TelaPlaneta extends StatefulWidget {
   State<TelaPlaneta> createState() => _TelaPlanetaState();
 }
 
+// Estado da tela de cadastro/edição do planeta
 class _TelaPlanetaState extends State<TelaPlaneta> {
-  final _formKey = GlobalKey<FormState>();
+  final _formKey = GlobalKey<FormState>(); 
 
+  // Controladores para os campos de entrada de texto
   final TextEditingController _nomeController = TextEditingController();
   final TextEditingController _tamanhoController = TextEditingController();
   final TextEditingController _distanciaController = TextEditingController();
   final TextEditingController _apelidoController = TextEditingController();
 
-  final ControlePlaneta _controlePlaneta = ControlePlaneta();
+  final ControlePlaneta _controlePlaneta = ControlePlaneta(); 
 
-  late Planeta _planeta;
+  late Planeta _planeta; // Variável para armazenar o planeta sendo editado
 
   @override
   void initState() {
-    _planeta = widget.planeta;
-    _nomeController.text = _planeta.nome;
-    _tamanhoController.text = _planeta.tamanho.toString();
-    _distanciaController.text = _planeta.distancia.toString();
-    _apelidoController.text = _planeta.apelido ?? '';
     super.initState();
+    _planeta = widget.planeta;
+    
+    // Inicializa os controladores apenas se os valores existirem
+    _nomeController.text = _planeta.nome;
+    _tamanhoController.text = _planeta.tamanho > 0 ? _planeta.tamanho.toString() : '';
+    _distanciaController.text = _planeta.distancia > 0 ? _planeta.distancia.toString() : '';
+    _apelidoController.text = _planeta.apelido ?? '';
   }
 
   @override
   void dispose() {
+    // Libera os controladores ao sair da tela para evitar vazamento de memória
     _nomeController.dispose();
     _tamanhoController.dispose();
     _distanciaController.dispose();
@@ -50,18 +55,20 @@ class _TelaPlanetaState extends State<TelaPlaneta> {
     super.dispose();
   }
 
+  // Método para inserir um novo planeta no banco de dados
   Future<void> _inserirPlaneta() async {
     await _controlePlaneta.inserirPlaneta(planeta: _planeta);
   }
 
+  // Método para alterar os dados de um planeta já existente
   Future<void> _alterarPlaneta() async {
     await _controlePlaneta.alterarPlaneta(_planeta);
   }
 
+  // Valida e envia o formulário
   void _submitForm() {
     if (_formKey.currentState!.validate()) {
-      // Dados validados com sucesso!
-      _formKey.currentState!.save();
+      _formKey.currentState!.save(); // Salva os valores do formulário no objeto Planeta
 
       if (widget.isIncluir) {
         _inserirPlaneta();
@@ -69,16 +76,16 @@ class _TelaPlanetaState extends State<TelaPlaneta> {
         _alterarPlaneta();
       }
 
-      _inserirPlaneta();
-
+      // Exibe uma mensagem de sucesso
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
               'Dados do planeta ${widget.isIncluir ? 'incluídos' : 'alterados'} com sucesso!'),
         ),
       );
-      Navigator.of(context).pop();
-      widget.onFinalizado();
+
+      Navigator.of(context).pop(); // Fecha a tela após salvar os dados
+      widget.onFinalizado(); // Chama a função de atualização da tela principal
     }
   }
 
@@ -87,16 +94,17 @@ class _TelaPlanetaState extends State<TelaPlaneta> {
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
-        title: const Text('Cadastrar Planeta'),
-        elevation: 3,
+        title: const Text('Cadastrar Planeta'), // Título da tela
+        elevation: 3, 
       ),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 40.0, vertical: 30.0),
         child: Form(
-          key: _formKey,
+          key: _formKey, 
           child: SingleChildScrollView(
             child: Column(
               children: [
+                // Campo para inserir o nome do planeta
                 TextFormField(
                   controller: _nomeController,
                   decoration: InputDecoration(
@@ -117,6 +125,8 @@ class _TelaPlanetaState extends State<TelaPlaneta> {
                   },
                 ),
                 const SizedBox(height: 40),
+
+                // Campo para inserir o tamanho do planeta
                 TextFormField(
                   controller: _tamanhoController,
                   decoration: InputDecoration(
@@ -125,8 +135,8 @@ class _TelaPlanetaState extends State<TelaPlaneta> {
                       borderRadius: BorderRadius.circular(40.0),
                     ),
                   ),
-                  keyboardType: TextInputType.number,
-                  autovalidateMode: AutovalidateMode.onUserInteraction,
+                  keyboardType: TextInputType.number, // Aceita apenas números
+                  autovalidateMode: AutovalidateMode.onUserInteraction, // Garante que apenas números possam ser digitados
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'Por favor, insira o tamanho do planeta';
@@ -137,10 +147,12 @@ class _TelaPlanetaState extends State<TelaPlaneta> {
                     return null;
                   },
                   onSaved: (value) {
-                    _planeta.tamanho = double.parse(value!);
+                    _planeta.tamanho = double.tryParse(value ?? '0') ?? 0.0;
                   },
                 ),
                 const SizedBox(height: 40),
+
+                // Campo para inserir a distância do planeta
                 TextFormField(
                   controller: _distanciaController,
                   decoration: InputDecoration(
@@ -149,8 +161,8 @@ class _TelaPlanetaState extends State<TelaPlaneta> {
                       borderRadius: BorderRadius.circular(40.0),
                     ),
                   ),
-                  keyboardType: TextInputType.number,
-                  autovalidateMode: AutovalidateMode.onUserInteraction,
+                  keyboardType: TextInputType.number, // Aceita apenas números
+                  autovalidateMode: AutovalidateMode.onUserInteraction, // Garante entrada numérica
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'Por favor, insira a distância do planeta';
@@ -161,10 +173,12 @@ class _TelaPlanetaState extends State<TelaPlaneta> {
                     return null;
                   },
                   onSaved: (value) {
-                    _planeta.distancia = double.parse(value!);
+                    _planeta.distancia = double.tryParse(value ?? '0') ?? 0.0;
                   },
                 ),
                 const SizedBox(height: 40),
+
+                // Campo para inserir o apelido do planeta
                 TextFormField(
                   controller: _apelidoController,
                   decoration: InputDecoration(
@@ -181,19 +195,21 @@ class _TelaPlanetaState extends State<TelaPlaneta> {
                     return null;
                   },
                   onSaved: (value) {
-                    _planeta.apelido = (value!);
+                    _planeta.apelido = value!;
                   },
                 ),
                 const SizedBox(height: 60.0),
+
+                // Botões de ação (Cancelar e Confirmar)
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
                     ElevatedButton(
-                      onPressed: () => Navigator.of(context).pop(),
+                      onPressed: () => Navigator.of(context).pop(), // Fecha a tela sem salvar
                       child: const Text('Cancelar'),
                     ),
                     ElevatedButton(
-                      onPressed: _submitForm,
+                      onPressed: _submitForm, // Salva os dados e fecha a tela
                       child: const Text('Confirmar'),
                     ),
                   ],
